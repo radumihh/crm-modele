@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Model Management - Projects</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: 'Inter', sans-serif;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(135deg, #121212 0%, #1a1a1a 100%);
+      font-family: sans-serif;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    header {
+      width: 100%;
+      padding: 20px;
+      background-color: #1a1a1a;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    h1 {
+      margin: 0;
+    }
+
+    .btn {
+      background: #4e9eff;
+      border: none;
+      border-radius: 5px;
+      padding: 10px 20px;
+      color: #fff;
+      font-size: 16px;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+    }
+
+    .btn:hover {
+      background-color: #3a7bcc;
+    }
+
+    .projects-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+      gap: 25px;
+      width: 100%;
+      max-width: 1400px;
+      padding: 30px;
+      animation: fadeIn 0.5s ease-out;
+    }
+
+    .project-card {
+      background: rgba(30, 30, 30, 0.9);
+      backdrop-filter: blur(10px);
+      border-radius: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      overflow: hidden;
+      transform: translateY(0);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      cursor: pointer;
+    }
+
+    .project-card:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 12px 25px rgba(0, 0, 0, 0.3);
+      border-color: rgba(78, 158, 255, 0.3);
+    }
+
+    .project-image {
+      width: 100%;
+      height: 220px;
+      object-fit: cover;
+      transition: transform 0.3s ease;
+    }
+
+    .project-card:hover .project-image {
+      transform: scale(1.05);
+    }
+
+    .project-info {
+      padding: 20px;
+      background: linear-gradient(180deg, rgba(30, 30, 30, 0) 0%, rgba(30, 30, 30, 1) 100%);
+    }
+
+    .project-title {
+      font-size: 1.4rem;
+      font-weight: 600;
+      color: #fff;
+      margin: 0 0 10px 0;
+    }
+
+    .project-date {
+      color: #aaa;
+      font-size: 0.8rem;
+      margin-bottom: 10px;
+    }
+
+    .project-desc {
+      margin-bottom: 15px;
+      font-size: 0.9rem;
+      color: #ddd;
+    }
+
+    .model-count {
+      display: flex;
+      gap: 15px;
+      margin-top: 15px;
+      padding-top: 15px;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .count-badge {
+      background: rgba(78, 158, 255, 0.1);
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      color: #4e9eff;
+    }
+    
+    .no-projects {
+      padding: 50px;
+      text-align: center;
+      color: #aaa;
+    }
+
+    ::-webkit-scrollbar {
+      width: 10px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: #444;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: #4e9eff;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: #438ae2;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Allcove Model Management</h1>
+    <a href="/create-project" class="btn">Create New Project</a>
+  </header>
+  
+  <div class="projects-grid" id="projectsGrid">
+    <!-- Projects will be loaded here -->
+    <div class="no-projects">Loading projects...</div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        window.location.href = '/auth.html';
+        return;
+      }
+
+      // Add token to all fetch requests
+      const originalFetch = window.fetch;
+      window.fetch = function() {
+        let [url, config] = arguments;
+        if (!config) {
+          config = {};
+        }
+        if (!config.headers) {
+          config.headers = {};
+        }
+        config.headers.Authorization = `Bearer ${token}`;
+        return originalFetch(url, config);
+      };
+      
+      fetchProjects();
+    });
+
+    function fetchProjects() {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        window.location.href = '/auth.html';
+        return;
+      }
+
+      fetch('/api/projects', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+        .then(response => response.json())
+        .then(projects => {
+          const projectsGrid = document.getElementById('projectsGrid');
+          projectsGrid.innerHTML = '';
+          
+          if (projects.length === 0) {
+            projectsGrid.innerHTML = '<div class="no-projects">No projects found. Click "Create New Project" to get started.</div>';
+            return;
+          }
+          
+          projects.forEach(project => {
+            const card = document.createElement('div');
+            card.className = 'project-card';
+            card.onclick = () => window.location.href = `/swiper/${project.id}`;
+            
+            const startDate = new Date(project.startDate).toLocaleDateString();
+            const endDate = new Date(project.endDate).toLocaleDateString();
+            
+            card.innerHTML = `
+              <img src="${project.imageUrl || '/tung.jpg'}" 
+                   alt="${project.name}" 
+                   class="project-image"
+                   onerror="this.src='../tung.jpg'">
+              <div class="project-info">
+                <h3 class="project-title">${project.name}</h3>
+                <div class="project-date">${startDate} - ${endDate}</div>
+                <p class="project-desc">${project.description || 'No description available.'}</p>
+                <div class="model-count">
+                  <span class="count-badge">Accepted models: ${project.acceptedModels?.length || 0}</span>
+                  <span class="count-badge">Rejected models: ${project.rejectedModels?.length || 0}</span>
+                </div>
+                <div class="project-actions" style="margin-top: 15px; display: flex; gap: 10px;">
+                  <button class="btn" onclick="event.stopPropagation(); window.location.href='/edit-project/${project.id}'">Edit</button>
+                  <button class="btn" onclick="event.stopPropagation(); window.location.href='/swiper/${project.id}'">Open</button>
+                </div>
+              </div>
+            `;
+            
+            projectsGrid.appendChild(card);
+          });
+        })
+        .catch(error => {
+          console.error('Error fetching projects:', error);
+          document.getElementById('projectsGrid').innerHTML = 
+            '<div class="no-projects">Error loading projects. Please try again later.</div>';
+        });
+    }
+  </script>
+</body>
+</html>
+``` 

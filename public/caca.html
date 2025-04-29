@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Remove Object Background - Perfect</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    h2 {
+      color: #333;
+    }
+    .container {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    .image-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+    .controls {
+      margin-bottom: 20px;
+    }
+    #loadingMessage {
+      color: #f44336;
+      display: none;
+    }
+    canvas {
+      border: 1px solid #ddd;
+      max-width: 100%;
+    }
+    button {
+      background-color: #4CAF50;
+      border: none;
+      color: white;
+      padding: 10px 15px;
+      text-align: center;
+      text-decoration: none;
+      display: inline-block;
+      font-size: 16px;
+      margin: 10px 2px;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+    input[type="range"] {
+      width: 200px;
+    }
+    .slider-container {
+      margin-top: 10px;
+    }
+    label {
+      display: inline-block;
+      width: 150px;
+    }
+  </style>
+</head>
+<body>
+  <h2>Eliminare Fundal - Versiune Îmbunătățită</h2>
+  
+  <div class="container">
+    <div class="controls">
+      <input type='file' id='imageUpload' accept='image/*'>
+      <div id="loadingMessage">Se încarcă modelul și se procesează imaginea...</div>
+      <div class="slider-container">
+        <label for="thresholdSlider">Prag de detectare:</label>
+        <input type="range" id="thresholdSlider" min="0" max="100" value="10">
+        <span id="thresholdValue">10</span>
+      </div>
+      <div class="slider-container">
+        <label for="blurSlider">Netezire margini:</label>
+        <input type="range" id="blurSlider" min="0" max="20" value="2">
+        <span id="blurValue">2</span>
+      </div>
+      <button id="processBtn">Procesează</button>
+      <button id="downloadBtn">Descarcă</button>
+    </div>
+    
+    <div class="image-container">
+      <div>
+        <h3>Imagine originală</h3>
+        <img id='inputImage' style='max-width: 350px; display: none;'>
+      </div>
+      <div>
+        <h3>Imagine procesată</h3>
+        <canvas id='outputCanvas'></canvas>
+      </div>
+    </div>
+  </div>
+
+  <script src='https://cdn.jsdelivr.net/npm/@tensorflow/tfjs'></script>
+  <script src='https://cdn.jsdelivr.net/npm/@tensorflow-models/deeplab'></script>
+  <script>
+    const inputImage = document.getElementById('inputImage');
+    const outputCanvas = document.getElementById('outputCanvas');
+    const imageUpload = document.getElementById('imageUpload');
+    const processBtn = document.getElementById('processBtn');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const loadingMessage = document.getElementById('loadingMessage');
+    const thresholdSlider = document.getElementById('thresholdSlider');
+    const thresholdValue = document.getElementById('thresholdValue');
+    const blurSlider = document.getElementById('blurSlider');
+    const blurValue = document.getElementById('blurValue');
+
+    // Keep track of the loaded model and current file
+    let deeplabModel = null;
+    let currentFile = null;
+
+    // Initialize
+    async function init() {
+      // Load the model at startup
+      loadingMessage.style.display = 'block';
+      try {
+        deeplabModel = await deeplab.load();
+        loadingMessage.style.display = 'none';
+      } catch (error) {
+        loadingMessage.textContent = 'Eroare la încărcarea modelului: ' + error.message;
+      }
+    }
+
+    // Process the image with advanced techniques
+    async function processImage() {
+      if (!currentFile || !deeplabModel) return;
+      
+      loadingMessage.style.display = 'block';
+      
+      try {
+        // Get values from sliders
+        const threshold = thresholdSlider.value / 100;
+        const blurAmount = parseInt(blurSlider.value);
+        
+        // Get the image dimensions
+        const { width, height } = inputImage;
+        
+        // Set canvas dimensions
+        outputCanvas.width = width;
+        outputCanvas.height = height;
+        const ctx = outputCanvas.getContext('2d');
+        
+        // First draw the original image
+        ctx.drawImage(inputImage, 0, 0);
+        
+        // Get segmentation from model
+        const segmentation = await deeplabModel.segment(inputImage);
+        const segmentationMask = segmentation.segmentationMap;
+        
+        // Create a temporary canvas for mask processing
+        const maskCanvas = document.createElement('canvas');
+        maskCanvas.width = width;
+        maskCanvas.height = height;
+        const maskCtx = maskCanvas.getContext('2d');
+        
+        // Create imageData for mask
+        const maskImageData = maskCtx.createImageData(width, height);
+        const maskData = maskImageData.data;
+        
+        // Process segmentation map to create mask
+        for (let y = 0; y < height; y++) {
+          for (let x = 0; x < width; x++) {
+            const pixelIndex = (y * width + x);
+            const dataIndex = pixelIndex * 4;
+            
+            // If pixel is background (0) or below threshold, make it transparent
+            if (segmentationMask[pixelIndex] === 0 || segmentationMask[pixelIndex] < threshold) {
+              maskData[dataIndex] = 0;     // R
+              maskData[dataIndex + 1] = 0; // G
+              maskData[dataIndex + 2] = 0; // B
+              maskData[dataIndex + 3] = 0; // A - transparent
+            } else {
+              // Foreground - make it white
+              maskData[dataIndex] = 255;     // R
+              maskData[dataIndex + 1] = 255; // G
+              maskData[dataIndex + 2] = 255; // B
+              maskData[dataIndex + 3] = 255; // A - opaque
+            }
+          }
+        }
+        
+        // Apply mask to maskCanvas
+        maskCtx.putImageData(maskImageData, 0, 0);
+        
+        // If blur is requested, apply it to the mask
+        if (blurAmount > 0) {
+          maskCtx.filter = `blur(${blurAmount}px)`;
+          maskCtx.drawImage(maskCanvas, 0, 0);
+          maskCtx.filter = 'none';
+        }
+        
+        // Clear the output canvas
+        ctx.clearRect(0, 0, width, height);
+        
+        // Draw the original image
+        ctx.drawImage(inputImage, 0, 0);
+        
+        // Apply the mask using composite operation
+        ctx.globalCompositeOperation = 'destination-in';
+        ctx.drawImage(maskCanvas, 0, 0);
+        ctx.globalCompositeOperation = 'source-over';
+        
+        loadingMessage.style.display = 'none';
+      } catch (error) {
+        loadingMessage.textContent = 'Eroare la procesare: ' + error.message;
+      }
+    }
+
+    // Event listeners
+    imageUpload.addEventListener('change', (event) => {
+      const file = event.target.files[0];
+      if (!file) return;
+      
+      currentFile = file;
+      const reader = new FileReader();
+      
+      reader.onload = (e) => {
+        inputImage.src = e.target.result;
+        inputImage.style.display = 'block';
+        
+        inputImage.onload = () => {
+          // Auto-process when image is loaded
+          processImage();
+        };
+      };
+      
+      reader.readAsDataURL(file);
+    });
+
+    processBtn.addEventListener('click', processImage);
+    
+    downloadBtn.addEventListener('click', () => {
+      if (!outputCanvas.width) return;
+      
+      const link = document.createElement('a');
+      link.download = 'imagine-fara-fundal.png';
+      link.href = outputCanvas.toDataURL('image/png');
+      link.click();
+    });
+    
+    // Update values when sliders change
+    thresholdSlider.addEventListener('input', () => {
+      thresholdValue.textContent = thresholdSlider.value;
+    });
+    
+    blurSlider.addEventListener('input', () => {
+      blurValue.textContent = blurSlider.value;
+    });
+    
+    thresholdSlider.addEventListener('change', processImage);
+    blurSlider.addEventListener('change', processImage);
+
+    // Initialize app
+    init();
+  </script>
+</body>
+</html>

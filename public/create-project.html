@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Create New Project</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+}
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #121212;
+      font-family: sans-serif;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    header {
+      width: 100%;
+      padding: 20px;
+      background-color: #1a1a1a;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    h1 {
+      margin: 0;
+    }
+
+    .btn {
+      background: #4e9eff;
+      border: none;
+      border-radius: 5px;
+      padding: 10px 20px;
+      color: #fff;
+      font-size: 16px;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+    }
+
+    .btn:hover {
+      background-color: #3a7bcc;
+    }
+
+    .btn.secondary {
+      background: #2a2a2a;
+    }
+
+    .btn.secondary:hover {
+      background-color: #444;
+    }
+
+    .form-container {
+      width: 100%;
+      max-width: 600px;
+      margin: 40px auto;
+      padding: 20px;
+      background-color: #1e1e1e;
+      border-radius: 10px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: bold;
+    }
+
+    input, textarea {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #333;
+      border-radius: 5px;
+      background-color: #2a2a2a;
+      color: #fff;
+      font-size: 16px;
+    }
+
+    textarea {
+      min-height: 100px;
+      resize: vertical;
+    }
+
+    input:focus, textarea:focus {
+      border-color: #4e9eff;
+      outline: none;
+    }
+
+    .buttons {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 30px;
+    }
+
+    .error-message {
+      color: #ff5757;
+      font-size: 14px;
+      margin-top: 5px;
+      display: none;
+    }
+
+    ::-webkit-scrollbar {
+      width: 10px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: #444;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: #4e9eff;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: #438ae2;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Create New Project</h1>
+    <a href="/" class="btn secondary">Back to Projects</a>
+  </header>
+  
+  <div class="form-container">
+    <form id="projectForm">
+      <div class="form-group">
+        <label for="name">Project Name *</label>
+        <input type="text" id="name" name="name" required>
+        <div class="error-message" id="nameError">Project name is required</div>
+      </div>
+      
+      <div class="form-group">
+        <label for="description">Description</label>
+        <textarea id="description" name="description"></textarea>
+      </div>
+      
+      <div class="form-group">
+        <label for="startDate">Start Date *</label>
+        <input type="date" id="startDate" name="startDate" required>
+        <div class="error-message" id="startDateError">Start date is required</div>
+      </div>
+      
+      <div class="form-group">
+        <label for="endDate">End Date *</label>
+        <input type="date" id="endDate" name="endDate" required>
+        <div class="error-message" id="endDateError">End date is required</div>
+      </div>
+      
+      <div class="form-group">
+        <label for="image">Project Image</label>
+        <input type="file" id="image" name="image" accept="image/*" required>
+        <div class="error-message" id="imageError">Please select an image</div>
+        <img id="imagePreview" style="display: none; max-width: 200px; margin-top: 10px; border-radius: 5px;">
+      </div>
+      
+      <div class="buttons">
+        <a href="/" class="btn secondary">Cancel</a>
+        <button type="submit" class="btn">Create Project</button>
+      </div>
+    </form>
+  </div>
+
+  <script>
+    document.getElementById('image').addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          const preview = document.getElementById('imagePreview');
+          preview.src = e.target.result;
+          preview.style.display = 'block';
+        }
+        reader.readAsDataURL(file);
+      }
+    });
+
+    document.getElementById('projectForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      
+      // Reset errors
+      document.querySelectorAll('.error-message').forEach(el => el.style.display = 'none');
+      
+      // Validate form
+      let isValid = true;
+      
+      const name = document.getElementById('name').value.trim();
+      if (!name) {
+        document.getElementById('nameError').style.display = 'block';
+        isValid = false;
+      }
+      
+      const startDate = document.getElementById('startDate').value;
+      if (!startDate) {
+        document.getElementById('startDateError').style.display = 'block';
+        isValid = false;
+      }
+      
+      const endDate = document.getElementById('endDate').value;
+      if (!endDate) {
+        document.getElementById('endDateError').style.display = 'block';
+        isValid = false;
+      }
+      
+      if (!isValid) return;
+      
+      // Create FormData object to handle file upload
+      const formData = new FormData();
+      formData.append('name', document.getElementById('name').value.trim());
+      formData.append('description', document.getElementById('description').value.trim());
+      formData.append('startDate', document.getElementById('startDate').value);
+      formData.append('endDate', document.getElementById('endDate').value);
+      
+      const imageFile = document.getElementById('image').files[0];
+      if (imageFile) {
+        formData.append('image', imageFile);
+      }
+      
+      try {
+        const response = await fetch('/api/projects', {
+          method: 'POST',
+          body: formData // Note: Don't set Content-Type header, browser will set it
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+          window.location.href = `/swiper/${result.id}`;
+        } else {
+          alert('Error creating project: ' + (result.error || 'Unknown error'));
+        }
+      } catch (error) {
+        console.error('Error creating project:', error);
+        alert('Failed to create project. Please try again.');
+      }
+    });
+    
+    function isValidUrl(url) {
+      try {
+        new URL(url);
+        return true;
+      } catch (e) {
+        return false;
+      }
+    }
+  </script>
+</body>
+</html>

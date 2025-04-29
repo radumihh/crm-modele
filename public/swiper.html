@@ -1,0 +1,1115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Model Swiper</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+}
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #121212;
+      font-family: sans-serif;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    header {
+      width: 100%;
+      padding: 15px 20px;
+      background-color: #1a1a1a;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    }
+
+    .project-title {
+      margin: 0;
+      display: flex;
+      align-items: center;
+    }
+
+    .project-title span {
+      font-size: 14px;
+      opacity: 0.7;
+      margin-left: 10px;
+    }
+
+    .btn {
+      background: #4e9eff;
+      border: none;
+      border-radius: 5px;
+      padding: 8px 15px;
+      color: #fff;
+      font-size: 14px;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+    }
+
+    .btn:hover {
+      background-color: #3a7bcc;
+    }
+
+    .btn.secondary {
+      background: #2a2a2a;
+    }
+
+    .btn.secondary:hover {
+      background-color: #444;
+    }
+
+    h1 {
+      margin: 20px;
+    }
+
+    .main-container {
+      display: flex;
+      width: 100%;
+      max-width: 1400px;
+      height: calc(100vh - 60px);
+      margin: 0 auto;
+      padding: 10px;
+      gap: 20px;
+    }
+
+    .card-section {
+      flex: 1;
+      position: relative;
+      height: 100%;
+    }
+
+    .right-section {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: #1e1e1e;
+      border-radius: 10px;
+      overflow: hidden;
+      height: 90%;
+    }
+
+    @media (max-width: 768px) {
+      .main-container {
+        flex-direction: column;
+        height: auto;
+        min-height: calc(100vh - 60px);
+        margin-bottom: 15vh;
+      }
+
+      .card-section {
+        height: 100vh;
+        margin-bottom: 20px;
+      }
+
+      .right-section {
+        height: 100vh;
+      }
+
+      .card {
+        position: relative;
+        height: 100%;
+      }
+
+      #profilesView, #commentsView {
+        height: calc(100% - 120px);
+      }
+
+      .table-container {
+        height: calc(100% - 50px);
+      }
+
+      .comments-list {
+        height: auto;
+        max-height: calc(100vh - 300px);
+      }
+    }
+
+    .tab-buttons.comment-tabs {
+      padding: 10px;
+      background: #1a1a1a;
+      margin-bottom: 0;
+    }
+
+    .table-section {
+      top: 0;
+      right: 0;
+      width: 100%;
+      max-width: 600px;
+      height: 100vh;
+      background: #1e1e1e;
+      box-shadow: -5px 0 15px rgba(0,0,0,0.3);
+      padding: 20px;
+      overflow-y: auto;
+      z-index: 1000;
+    }
+
+    .table-section .close-btn {
+      position: absolute;
+      right: 20px;
+      top: 20px;
+      background: none;
+      border: none;
+      color: #fff;
+      font-size: 24px;
+      cursor: pointer;
+    }
+
+    .comments-section {
+      margin-top: 20px;
+      padding-top: 20px;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .comment-item {
+      background: #2a2a2a;
+      border-radius: 5px;
+      padding: 15px;
+      margin-bottom: 10px;
+    }
+
+    .comment-input {
+      width: 100%;
+      background: #2a2a2a;
+      border: 1px solid #333;
+      border-radius: 5px;
+      color: #fff;
+      padding: 10px;
+      margin-bottom: 10px;
+    }
+
+    .card-container {
+      position: relative;
+      width: 100%;
+      height: 80vh;
+      overflow: hidden;
+    }
+
+    .card {
+      background: rgba(30, 30, 30, 0.9);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      transform-origin: center;
+      transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+      border-radius: 20px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+    }
+
+    .card.swiping-left {
+      transform: translateX(-150%) rotate(-20deg);
+      opacity: 0;
+    }
+
+    .card.swiping-right {
+      transform: translateX(150%) rotate(20deg);
+      opacity: 0;
+    }
+
+    .carousel {
+      position: relative;
+      width: 100%;
+      height: auto;
+      min-height: 250px;
+      max-height: 350px;
+      background: rgba(10, 10, 10, 0.8);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      overflow: hidden;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .carousel-img {
+      width: 100%;
+      height: auto;
+      max-height: 350px;
+      object-fit: contain;
+      display: none;
+      border-radius: 10px;
+      transition: opacity 0.3s ease;
+    }
+
+    .carousel-img.active {
+      display: block;
+    }
+
+    .carousel-btn {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      background: rgba(0,0,0,0.5);
+      color: white;
+      font-size: 1.5rem;
+      border: none;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+    }
+
+    .carousel-btn.left {
+      left: 10px;
+    }
+
+    .carousel-btn.right {
+      right: 10px;
+    }
+
+    .info {
+      margin-top: 10px;
+    }
+
+    .actions {
+      display: flex;
+      justify-content: space-around;
+      margin-top: 10px;
+      margin-bottom: 10px;
+    }
+
+    .btn-action {
+      background: rgba(42, 42, 42, 0.9);
+      backdrop-filter: blur(5px);
+      border: 2px solid rgba(255, 255, 255, 0.1);
+      border-radius: 50%;
+      width: 70px;
+      height: 70px;
+      color: #fff;
+      font-size: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .btn-action:hover {
+      transform: scale(1.1);
+    }
+
+    .btn-action.reject {
+      color: #ff5757;
+    }
+
+    .btn-action.reject:hover {
+      background: rgba(255, 87, 87, 0.2);
+      border-color: #ff5757;
+    }
+
+    .btn-action.accept {
+      color: #57ff8a;
+    }
+
+    .btn-action.accept:hover {
+      background: rgba(87, 255, 138, 0.2);
+      border-color: #57ff8a;
+    }
+
+    .details {
+      background-color: #1a1a1a;
+      border-radius: 10px;
+      padding: 15px;
+      margin-top: 10px;
+      margin-bottom: 20px;
+    }
+
+    iframe, .cv-img {
+      width: 100%;
+      max-height: 200px;
+      margin-top: 10px;
+      border-radius: 10px;
+    }
+
+    .tab-buttons {
+      display: flex;
+      margin-bottom: 15px;
+    }
+
+    .tab-btn {
+      padding: 10px 20px;
+      background-color: #2a2a2a;
+      border: none;
+      border-radius: 5px 5px 0 0;
+      color: #fff;
+      cursor: pointer;
+      margin-right: 5px;
+    }
+
+    .tab-btn.active {
+      background-color: #4e9eff;
+    }
+
+    .profile-table {
+      width: 100%;
+      border-collapse: collapse;
+      background-color: #1e1e1e;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    .profile-table th, .profile-table td {
+      padding: 12px 15px;
+      text-align: left;
+      border-bottom: 1px solid #333;
+    }
+
+    .profile-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .profile-table th {
+      background-color: #2a2a2a;
+      font-weight: bold;
+    }
+
+    .profile-table tbody tr {
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+
+    .profile-table tbody tr:hover {
+      background-color: #333;
+    }
+
+    .table-container {
+      flex: 1;
+      overflow-y: auto;
+    }
+
+    .project-info {
+      margin-bottom: 15px;
+      background-color: #1a1a1a;
+      border-radius: 10px;
+      padding: 15px;
+    }
+
+    .loading {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      color: #aaa;
+    }
+
+    a {
+      color: #4e9eff;
+      text-decoration: none;
+    }
+    
+    a:hover {
+      text-decoration: underline;
+    }
+
+    ::-webkit-scrollbar {
+      width: 10px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: #444;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: #4e9eff;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: #438ae2;
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      z-index: 1000;
+    }
+
+    .modal-content {
+      position: relative;
+      background: #1e1e1e;
+      margin: 10% auto;
+      padding: 20px;
+      width: 90%;
+      max-width: 600px;
+      border-radius: 10px;
+      max-height: 60vh;
+      overflow-y: auto;
+    }
+
+    .close-modal {
+      position: absolute;
+      right: 20px;
+      top: 20px;
+      font-size: 24px;
+      cursor: pointer;
+      color: #fff;
+    }
+
+    .detail-section {
+      margin-bottom: 20px;
+      padding-bottom: 15px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .detail-section:last-child {
+      border-bottom: none;
+      margin-bottom: 0;
+      padding-bottom: 0;
+    }
+
+    .detail-section h4 {
+      color: #4e9eff;
+      margin: 0 0 10px 0;
+    }
+
+    .detail-section p {
+      margin: 8px 0;
+    }
+
+    #profilesView, #commentsView {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      height: calc(100% - 100px);
+    }
+
+    .tab-buttons.main-tabs {
+      margin-bottom: 25px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      padding-bottom: 10px;
+    }
+
+    .tab-buttons.main-tabs .tab-btn {
+      border-radius: 5px;
+      margin-right: 10px;
+    }
+
+    .loading-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.9);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+    }
+
+    .spinner {
+      width: 50px;
+      height: 50px;
+      border: 5px solid #333;
+      border-top: 5px solid #4e9eff;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="loading-overlay" id="loadingOverlay">
+    <div class="spinner"></div>
+  </div>
+
+  <header>
+    <h2 class="project-title">
+      <span id="projectName">Project</span>
+      <span id="projectDates"></span>
+    </h2>
+    <div>
+      <a href="/" class="btn secondary">All Projects</a>
+    </div>
+  </header>
+
+  <div class="main-container">
+    <div class="card-section">
+      <div class="card-container" id="cardContainer">
+        <div class="loading">Loading models...</div>
+      </div>
+    </div>
+
+    <div class="right-section">
+      <div class="project-info" id="projectInfo">
+        <p><strong>Description:</strong> <span id="projectDescription">Loading...</span></p>
+      </div>
+
+      <div class="tab-buttons main-tabs">
+        <button class="tab-btn active" id="commentsTab" onclick="switchView('comments')">Comments</button>
+        <button class="tab-btn" id="profilesTab" onclick="switchView('profiles')">Models</button>
+      </div>
+
+      <div id="commentsView">
+        <div class="tab-buttons comment-tabs">
+          <button class="tab-btn active" id="thisProjectTab" onclick="switchCommentView('this')">This Project</button>
+          <button class="tab-btn" id="allProjectsTab" onclick="switchCommentView('all')">All Projects</button>
+        </div>
+        <div style="padding: 20px; display: flex; flex-direction: column; height: calc(100% - 50px);">
+          <textarea id="commentInput" class="comment-input" placeholder="Add a comment..."></textarea>
+          <button class="btn" onclick="addComment()">Add Comment</button>
+          <div class="comments-list" id="commentsList"></div>
+        </div>
+      </div>
+
+      <div id="profilesView" style="display: none">
+        <div class="tab-buttons">
+          <button class="tab-btn active" id="acceptedTab" onclick="switchTab('accepted')">Accepted</button>
+          <button class="tab-btn" id="rejectedTab" onclick="switchTab('rejected')">Rejected</button>
+        </div>
+        <div class="table-container">
+          <table class="profile-table">
+            <thead>
+              <tr>
+                <th>Name/Email</th>
+                <th>Phone</th>
+              </tr>
+            </thead>
+            <tbody id="profileTableBody">
+              <tr><td colspan="2">Loading...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const sheetURL = "/api/models";
+    let currentIndex = 0;
+    let responses = [];
+    let project = {};
+    let projectId;
+    let currentTab = 'accepted';
+    let currentSlide = 0;
+    
+    // Get project ID from URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const pathSegments = window.location.pathname.split('/');
+    projectId = pathSegments[pathSegments.length - 1];
+    
+    document.addEventListener('DOMContentLoaded', async () => {
+      try {
+        await fetchProjectData();
+        await fetchModelsData();
+        // Încarcă comentariile imediat după ce datele sunt disponibile
+        if (responses.length > 0) {
+          loadComments('this');
+        }
+      } catch (error) {
+        console.error('Error loading initial data:', error);
+      } finally {
+        // Ascunde loading overlay când totul e gata
+        document.getElementById('loadingOverlay').style.display = 'none';
+      }
+    });
+
+    async function fetchProjectData() {
+      try {
+        const response = await fetch(`/api/projects/${projectId}`);
+        
+        if (!response.ok) {
+          throw new Error('Project not found');
+        }
+        
+        project = await response.json();
+        
+        // Update UI with project data
+        document.getElementById('projectName').textContent = project.name;
+        
+        const startDate = new Date(project.startDate).toLocaleDateString();
+        const endDate = new Date(project.endDate).toLocaleDateString();
+        document.getElementById('projectDates').textContent = `(${startDate} - ${endDate})`;
+        
+        document.getElementById('projectDescription').textContent = project.description || 'No description available';
+        
+        document.title = `Model Swiper - ${project.name}`;
+        
+        updateTable();
+      } catch (error) {
+        console.error('Error fetching project:', error);
+        alert('Project not found. Redirecting to projects page...');
+        window.location.href = '/';
+      }
+    }
+
+    async function fetchModelsData() {
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(sheetURL, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        if (response.status === 401) {
+          window.location.href = '/auth.html';
+          return;
+        }
+        
+        const text = await response.text();
+        
+        const lines = text.trim().split('\n');
+        const headers = lines[0].split('\t');
+        responses = lines.slice(1).map(line => {
+            const values = line.split('\t');
+          const obj = {};
+          headers.forEach((h, i) => obj[h.trim()] = values[i]?.trim() || '');
+          return obj;
+        });
+        
+        console.log(responses);
+        renderCard(currentIndex);
+        updateTable();
+      } catch (error) {
+        console.error('Error fetching models data:', error);
+        document.getElementById('cardContainer').innerHTML = 
+          '<div class="loading">Error loading models. Please try again later.</div>';
+      }
+    }
+
+    async function renderCard(index) {
+      const container = document.getElementById("cardContainer");
+      container.innerHTML = '';
+      
+      if (index >= responses.length) {
+        container.innerHTML = '<div class="loading">No more profiles available.</div>';
+        return;
+      }
+
+      const r = responses[index];
+      
+      // Fetch images from database
+      let imagePaths = [];
+      try {
+        const email = r['Email Address'];
+        if (email) {
+          const response = await fetch(`/api/models/images/${encodeURIComponent(email)}`, {
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+          });
+          const data = await response.json();
+          imagePaths = data.images || [];
+        }
+      } catch (error) {
+        console.error('Error fetching images:', error);
+      }
+
+      // Create carousel HTML
+      let carouselHTML = '<div class="carousel">';
+      if (imagePaths && imagePaths.length > 0) {
+        imagePaths.forEach((img, i) => {
+          carouselHTML += `
+            <img src="${img}" 
+                 class="carousel-img ${i === 0 ? 'active' : ''}" 
+                 alt="headshot ${i+1}"
+                 onerror="this.onerror=null; this.src='/default-model.jpg';" />`;
+        });
+        
+        if (imagePaths.length > 1) {
+          carouselHTML += `
+            <button class="carousel-btn left" onclick="carouselPrev()">◀</button>
+            <button class="carousel-btn right" onclick="carouselNext()">▶</button>
+          `;
+        }
+      } else {
+        carouselHTML += '<p>No images available</p>';
+      }
+      carouselHTML += '</div>';
+
+      const card = document.createElement("div");
+      card.className = "card";
+      
+      // Check model status in current project
+      const modelId = r['Email Address'] || `profile-${index}`;
+      const isAccepted = project.acceptedModels?.includes(modelId);
+      const isRejected = project.rejectedModels?.includes(modelId);
+      
+      const cvLink = r['Please upload your CV and/or recent experience'] || '';
+      const cvId = (cvLink.match(/\/d\/([a-zA-Z0-9_-]+)\//) || cvLink.match(/id=([a-zA-Z0-9_-]+)/))?.[1];
+      let cvViewer = '';
+      if (cvId) {
+        if (cvLink.includes('.pdf')) {
+          cvViewer = `
+            <p><a href="${cvLink}" target="_blank" rel="noopener noreferrer">View CV/Experience (PDF)</a></p>
+            <iframe src="https://drive.google.com/file/d/${cvId}/preview" allow="autoplay"></iframe>
+          `;
+        } else {
+          cvViewer = `
+            <p><a href="${cvLink}" target="_blank" rel="noopener noreferrer">View CV/Experience</a></p>
+            <img src="https://drive.google.com/thumbnail?id=${cvId}" class="cv-img" />
+          `;
+        }
+      }
+
+      function createSocialLink(username, platform) {
+        if (!username) return `<p><strong>${platform}:</strong> N/A</p>`;
+        
+        const formattedUrl = formatSocialUrl(platform, username);
+        // For display, use original input if it's a URL, otherwise add @ for usernames
+        const displayName = username.startsWith('http') ? username : (username.startsWith('@') ? username : '@' + username);
+        
+        return `<p><strong>${platform}:</strong> <a href="${formattedUrl}" target="_blank" rel="noopener noreferrer">${displayName}</a></p>`;
+      }
+
+      const instagramLink = createSocialLink(r['Instagram Profile'], 'Instagram');
+      let tiktokLink = '';
+      let otherSocialLinks = '';
+
+      if (r['TikTok Profile']) {
+        tiktokLink = createSocialLink(r['TikTok Profile'], 'TikTok');
+      }
+
+      if (r['Other Social Media']) {
+        otherSocialLinks = createSocialLink(r['Other Social Media'], 'Other social media');
+      }
+
+      card.innerHTML = `
+        ${carouselHTML}
+        <div class="info">
+          <p><strong>Phone:</strong> ${r['Phone Number (WhatsApp preferred)']}</p>
+          <h3>${r['Email Address'] || 'No Email'}</h3>
+          <p><strong>Age:</strong> ${r['Age']} | <strong>Gender:</strong> ${r['Gender']}</p>
+          <p><strong>Location:</strong> ${r['Where are you based? (City)']} | <strong>Nationality:</strong> ${r['Nationality']}</p>
+        </div>
+        <div class="actions">
+          <button class="btn-action reject ${isRejected ? 'active' : ''}" onclick="handleModelAction('reject')">❌</button>
+          <button class="btn-action accept ${isAccepted ? 'active' : ''}" onclick="handleModelAction('accept')">✓</button>
+        </div>
+        <div class="details">
+          <div class="detail-section">
+            <h4>Physical Details</h4>
+            <p><strong>Height / Weight:</strong> ${r['Height (cm)']} cm / ${r['Weight (kg)']} kg</p>
+            <p><strong>Hair / Eyes:</strong> ${r['Hair color']} / ${r['Eye Color']}</p>
+            <p><strong>Notable Features:</strong> ${r['Notable physical features? (tattoos, freckles, etc.) '] || 'None specified'}</p>
+          </div>
+
+          <div class="detail-section">
+            <h4>Skills & Background</h4>
+            <p><strong>Languages:</strong> ${r['What languages are you fluent in?']}</p>
+            <p><strong>About:</strong> ${r['How would you best describe yourself?']}</p>
+            <p><strong>Special Skills:</strong> ${r['Do you have any hidden talents or special skills? (ex: playing an instrument, a sport, painting, singing etc.)']}</p>
+            <p><strong>Hobbies:</strong> ${r['What are your hobbies/interests? (ex:fashion, cooking, art etc.)']}</p>
+            <p><strong>Driver's License:</strong> ${r['Do you have a drivers license?']}</p>
+          </div>
+
+          <div class="detail-section">
+            <h4>Social Media</h4>
+            ${createSocialLink(r['Instagram Profile'], 'Instagram')}
+            ${r['TikTok Profile'] ? createSocialLink(r['TikTok Profile'], 'TikTok') : ''}
+            ${r['Other social media links'] ? createSocialLink(r['Other social media links'], 'Other social media') : ''}
+          </div>
+
+          <div class="detail-section">
+            <h4>Work Preferences</h4>
+            <p><strong>Interested in:</strong> ${r['What kind of projects are you most interested in?']}</p>
+            <p><strong>Available for in-person:</strong> ${r['Are you available for in-person shoots?']}</p>
+            <p><strong>Open to travel:</strong> ${r['Are you open to travel?']}</p>
+            <p><strong>Open to barter:</strong> ${r['Are you open to barter-based collaborations?']}</p>
+          </div>
+
+          ${cvViewer ? `
+          <div class="detail-section">
+            <h4>Experience</h4>
+            ${cvViewer}
+          </div>
+          ` : ''}
+        </div>
+      `;
+      container.appendChild(card);
+      currentSlide = 0;
+
+      // Încarcă comentariile pentru noul model
+      await loadComments('this');
+    }
+
+    function formatSocialUrl(platform, username) {
+      if (!username) return '';
+      
+      // If it's already a URL, return it as-is
+      if (username.startsWith('http://') || username.startsWith('https://')) {
+        return username;
+      }
+      
+      // Clean up username (remove @ if present)
+      username = username.trim().replace(/^@/, '');
+      
+      // Format based on platform
+      switch(platform.toLowerCase()) {
+        case 'instagram':
+          return `https://instagram.com/${username}`;
+        case 'tiktok':
+          return `https://tiktok.com/@${username}`;
+        case 'facebook':
+          return `https://facebook.com/${username}`;
+        case 'other social media':
+          // If it looks like a domain (contains a dot), add https://
+          if (username.includes('.')) {
+            return username.startsWith('www.') ? `https://${username}` : `https://www.${username}`;
+          }
+          // Otherwise treat as generic URL
+          return `https://${username}`;
+        default:
+          return username;
+      }
+    }
+
+    async function handleModelAction(action) {
+      if (currentIndex >= responses.length) return;
+      
+      const currentProfile = responses[currentIndex];
+      const modelId = currentProfile['Email Address'] || `profile-${currentIndex}`;
+      
+      try {
+        const response = await fetch(`/api/projects/${projectId}/models`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            modelId,
+            action: action === 'accept' ? 'accept' : 'reject'
+          })
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to update model status');
+        }
+        
+        project = await response.json();
+        currentIndex++;
+        renderCard(currentIndex);
+        updateTable();
+      } catch (error) {
+        console.error('Error updating model status:', error);
+        alert('Failed to update model status. Please try again.');
+      }
+    }
+
+    function carouselNext() {
+      const slides = document.querySelectorAll('.carousel-img');
+      if (slides.length > 0) {
+        slides[currentSlide].classList.remove('active');
+        currentSlide = (currentSlide + 1) % slides.length;
+        slides[currentSlide].classList.add('active');
+      }
+    }
+
+    function carouselPrev() {
+      const slides = document.querySelectorAll('.carousel-img');
+      if (slides.length > 0) {
+        slides[currentSlide].classList.remove('active');
+        currentSlide = (currentSlide - 1 + slides.length) % slides.length;
+        slides[currentSlide].classList.add('active');
+      }
+    }
+    
+    function switchTab(tab) {
+      currentTab = tab;
+      
+      document.getElementById('acceptedTab').classList.toggle('active', tab === 'accepted');
+      document.getElementById('rejectedTab').classList.toggle('active', tab === 'rejected');
+      
+      updateTable();
+    }
+    
+    function updateTable() {
+      const tableBody = document.getElementById('profileTableBody');
+      tableBody.innerHTML = '';
+      
+      if (!project.acceptedModels || !project.rejectedModels) {
+        tableBody.innerHTML = '<tr><td colspan="2">Loading project data...</td></tr>';
+        return;
+      }
+      
+      const profileList = currentTab === 'accepted' ? project.acceptedModels : project.rejectedModels;
+      
+      if (profileList.length === 0) {
+        tableBody.innerHTML = `<tr><td colspan="2">No ${currentTab} models</td></tr>`;
+        return;
+      }
+      
+      profileList.forEach(profileId => {
+        const profile = responses.find(r => {
+          const email = r['Email Address'] || '';
+          const idx = responses.indexOf(r);
+          return email === profileId || `profile-${idx}` === profileId;
+        });
+        
+        if (profile) {
+          const row = document.createElement('tr');
+          const email = profile['Email Address'] || `Profile ${responses.indexOf(profile)}`;
+          const phone = profile['Phone Number (WhatsApp preferred)'] || 'N/A';
+          
+          row.innerHTML = `
+            <td>${email}</td>
+            <td>${phone}</td>
+          `;
+          
+          row.onclick = function() {
+            const index = responses.indexOf(profile);
+            if (index !== -1) {
+              currentIndex = index;
+              renderCard(currentIndex);
+            }
+          };
+          
+          tableBody.appendChild(row);
+        }
+      });
+    }
+
+    // Add touch swipe support
+    let touchStartX = 0;
+    let touchEndX = 0;
+    
+    document.addEventListener('touchstart', e => {
+      touchStartX = e.changedTouches[0].screenX;
+    });
+
+    document.addEventListener('touchend', e => {
+      touchEndX = e.changedTouches[0].screenX;
+      handleSwipe();
+    });
+
+    function handleSwipe() {
+      const SWIPE_THRESHOLD = 100;
+      const diff = touchEndX - touchStartX;
+      
+      if (Math.abs(diff) > SWIPE_THRESHOLD) {
+        if (diff > 0) {
+          handleModelAction('accept');
+        } else {
+          handleModelAction('reject');
+        }
+      }
+    }
+
+    // Add keyboard support
+    document.addEventListener('keydown', e => {
+      if (e.key === 'ArrowLeft') handleModelAction('reject');
+      if (e.key === 'ArrowRight') handleModelAction('accept');
+    });
+
+    // Add modal functions
+    function switchView(view) {
+      document.getElementById('profilesView').style.display = view === 'profiles' ? 'block' : 'none';
+      document.getElementById('commentsView').style.display = view === 'comments' ? 'block' : 'none';
+      
+      document.getElementById('profilesTab').classList.toggle('active', view === 'profiles');
+      document.getElementById('commentsTab').classList.toggle('active', view === 'comments');
+    }
+
+    function switchCommentView(view) {
+      document.getElementById('thisProjectTab').classList.toggle('active', view === 'this');
+      document.getElementById('allProjectsTab').classList.toggle('active', view === 'all');
+      loadComments(view);
+    }
+
+    async function loadComments(view = 'this') {
+      try {
+        const currentEmail = responses[currentIndex]['Email Address'];
+        let url = `/api/models/${currentEmail}/comments`;
+        if (view === 'this') {
+          url += `?projectId=${projectId}`;
+        }
+
+        const response = await fetch(url, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+        const comments = await response.json();
+        
+        const commentsList = document.getElementById('commentsList');
+        commentsList.innerHTML = '';
+
+        for (const comment of comments) {
+          let projectInfo = '';
+          if (view === 'all' && comment.projectId) {
+            const projectResponse = await fetch(`/api/projects/${comment.projectId}`);
+            const projectData = await projectResponse.json();
+            projectInfo = `<div class="comment-project">Project: ${projectData.name}</div>`;
+          }
+
+          commentsList.innerHTML += `
+            <div class="comment-item">
+              <div class="comment-text">${comment.text}</div>
+              ${projectInfo}
+              <div class="comment-date">${new Date(comment.createdAt).toLocaleString()}</div>
+            </div>
+          `;
+        }
+      } catch (error) {
+        console.error('Error loading comments:', error);
+      }
+    }
+
+    async function addComment() {
+      const text = document.getElementById('commentInput').value.trim();
+      if (!text) return;
+
+      try {
+        const currentEmail = responses[currentIndex]['Email Address'];
+        const response = await fetch(`/api/models/${currentEmail}/comments`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          },
+          body: JSON.stringify({
+            projectId,
+            text
+          })
+        });
+
+        if (response.ok) {
+          document.getElementById('commentInput').value = '';
+          loadComments();
+        }
+      } catch (error) {
+        console.error('Error adding comment:', error);
+      }
+    }
+
+    // Close modal when clicking outside
+    window.onclick = function(event) {
+      const modal = document.getElementById('tableSection');
+      if (event.target === modal) {
+        closeTableModal();
+      }
+    }
+  </script>
+</body>
+</html>

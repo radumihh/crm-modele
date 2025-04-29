@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Edit Project</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+}
+
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #121212;
+      font-family: sans-serif;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    header {
+      width: 100%;
+      padding: 20px;
+      background-color: #1a1a1a;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    h1 {
+      margin: 0;
+    }
+
+    .btn {
+      background: #4e9eff;
+      border: none;
+      border-radius: 5px;
+      padding: 10px 20px;
+      color: #fff;
+      font-size: 16px;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+    }
+
+    .btn:hover {
+      background-color: #3a7bcc;
+    }
+
+    .btn.secondary {
+      background: #2a2a2a;
+    }
+
+    .btn.secondary:hover {
+      background-color: #444;
+    }
+
+    .form-container {
+      width: 100%;
+      max-width: 600px;
+      margin: 40px auto;
+      padding: 20px;
+      background-color: #1e1e1e;
+      border-radius: 10px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: bold;
+    }
+
+    input, textarea {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #333;
+      border-radius: 5px;
+      background-color: #2a2a2a;
+      color: #fff;
+      font-size: 16px;
+    }
+
+    textarea {
+      min-height: 100px;
+      resize: vertical;
+    }
+
+    input:focus, textarea:focus {
+      border-color: #4e9eff;
+      outline: none;
+    }
+
+    .buttons {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 30px;
+    }
+
+    .error-message {
+      color: #ff5757;
+      font-size: 14px;
+      margin-top: 5px;
+      display: none;
+    }
+
+    ::-webkit-scrollbar {
+      width: 10px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: #444;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: #4e9eff;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: #438ae2;
+    }
+  </style>
+  <style>
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      z-index: 1000;
+    }
+
+    .modal-content {
+      background: #1e1e1e;
+      margin: 15% auto;
+      padding: 20px;
+      width: 90%;
+      max-width: 400px;
+      border-radius: 10px;
+      text-align: center;
+    }
+
+    .modal-buttons {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    .danger {
+      background: #ff5757;
+    }
+
+    .danger:hover {
+      background: #ff3333;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Edit Project</h1>
+    <a href="/" class="btn secondary">Back to Projects</a>
+  </header>
+  
+  <div class="form-container">
+    <form id="projectForm">
+      <div class="form-group">
+        <label for="name">Project Name *</label>
+        <input type="text" id="name" name="name" required>
+        <div class="error-message" id="nameError">Project name is required</div>
+      </div>
+      
+      <div class="form-group">
+        <label for="description">Description</label>
+        <textarea id="description" name="description"></textarea>
+      </div>
+      
+      <div class="form-group">
+        <label for="startDate">Start Date *</label>
+        <input type="date" id="startDate" name="startDate" required>
+        <div class="error-message" id="startDateError">Start date is required</div>
+      </div>
+      
+      <div class="form-group">
+        <label for="endDate">End Date *</label>
+        <input type="date" id="endDate" name="endDate" required>
+        <div class="error-message" id="endDateError">End date is required</div>
+      </div>
+      
+      <div class="form-group">
+        <label for="image">Project Image (optional)</label>
+        <div class="current-image-container" style="margin-bottom: 10px;">
+          <img id="currentImage" style="max-width: 200px; border-radius: 5px;">
+          <p style="margin: 5px 0; color: #aaa; font-size: 14px;">Current image</p>
+        </div>
+        <input type="file" id="image" name="image" accept="image/*">
+        <img id="imagePreview" style="display: none; max-width: 200px; margin-top: 10px; border-radius: 5px;">
+        <p style="margin: 5px 0; color: #aaa; font-size: 14px;">Leave empty to keep current image</p>
+      </div>
+      
+      <div class="buttons">
+        <button type="button" class="btn danger" onclick="showDeleteModal()">Delete Project</button>
+        <button type="submit" class="btn">Update Project</button>
+      </div>
+    </form>
+  </div>
+
+  <div id="deleteModal" class="modal">
+    <div class="modal-content">
+      <h2>Delete Project?</h2>
+      <p>Are you sure you want to delete this project? This action cannot be undone.</p>
+      <div class="modal-buttons">
+        <button class="btn secondary" onclick="hideDeleteModal()">Cancel</button>
+        <button class="btn danger" onclick="deleteProject()">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let projectId;
+      
+    document.addEventListener('DOMContentLoaded', async () => {
+      // Get project ID from URL
+      const pathSegments = window.location.pathname.split('/');
+      projectId = pathSegments[pathSegments.length - 1];
+      
+      // Fetch and populate project data
+      try {
+        const response = await fetch(`/api/projects/${projectId}`);
+        if (!response.ok) throw new Error('Project not found');
+        
+        const project = await response.json();
+        
+        document.getElementById('name').value = project.name;
+        document.getElementById('description').value = project.description || '';
+        document.getElementById('startDate').value = project.startDate.split('T')[0];
+        document.getElementById('endDate').value = project.endDate.split('T')[0];
+        document.getElementById('currentImage').src = project.imageUrl;
+        
+      } catch (error) {
+        console.error('Error loading project:', error);
+        alert('Project not found');
+        window.location.href = '/';
+      }
+    });
+
+    document.getElementById('image').addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          const preview = document.getElementById('imagePreview');
+          preview.src = e.target.result;
+          preview.style.display = 'block';
+          document.getElementById('currentImage').style.display = 'none';
+        }
+        reader.readAsDataURL(file);
+      }
+    });
+
+    document.getElementById('projectForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      
+      // Reset errors
+      document.querySelectorAll('.error-message').forEach(el => el.style.display = 'none');
+      
+      // Validate form
+      let isValid = true;
+      
+      const name = document.getElementById('name').value.trim();
+      if (!name) {
+        document.getElementById('nameError').style.display = 'block';
+        isValid = false;
+      }
+      
+      const startDate = document.getElementById('startDate').value;
+      if (!startDate) {
+        document.getElementById('startDateError').style.display = 'block';
+        isValid = false;
+      }
+      
+      const endDate = document.getElementById('endDate').value;
+      if (!endDate) {
+        document.getElementById('endDateError').style.display = 'block';
+        isValid = false;
+      }
+      
+      if (!isValid) return;
+      
+      // Create FormData for file upload
+      const formData = new FormData();
+      formData.append('name', name);
+      formData.append('description', document.getElementById('description').value.trim());
+      formData.append('startDate', startDate);
+      formData.append('endDate', endDate);
+      
+      // Only append image if a new one was selected
+      const imageFile = document.getElementById('image').files[0];
+      if (imageFile) {
+        formData.append('image', imageFile);
+      }
+      
+      try {
+        const response = await fetch(`/api/projects/${projectId}`, {
+          method: 'PUT',
+          body: formData
+        });
+        
+        if (response.ok) {
+          window.location.href = '/';
+        } else {
+          const result = await response.json();
+          alert('Error updating project: ' + (result.error || 'Unknown error'));
+        }
+      } catch (error) {
+        console.error('Error updating project:', error);
+        alert('Failed to update project. Please try again.');
+      }
+    });
+
+    function showDeleteModal() {
+      document.getElementById('deleteModal').style.display = 'block';
+    }
+
+    function hideDeleteModal() {
+      document.getElementById('deleteModal').style.display = 'none';
+    }
+
+    async function deleteProject() {
+      try {
+        const response = await fetch(`/api/projects/${projectId}`, {
+          method: 'DELETE'
+        });
+        
+        if (response.ok) {
+          window.location.href = '/';
+        } else {
+          const result = await response.json();
+          alert('Error deleting project: ' + (result.error || 'Unknown error'));
+        }
+      } catch (error) {
+        console.error('Error deleting project:', error);
+        alert('Failed to delete project. Please try again.');
+      }
+    }
+  </script>
+</body>
+</html>
